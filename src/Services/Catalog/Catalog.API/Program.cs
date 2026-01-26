@@ -39,6 +39,9 @@ try
     builder.Services.AddScoped<IPlateService, PlateService>();
     builder.Services.AddScoped<IPlateMatchingService, PlateMatchingService>();
 
+    builder.Services.AddScoped<IPlatesWatchlistRepository, PlatesWatchlistRepository>();
+    builder.Services.AddScoped<IPlatesWatchlistService, PlatesWatchlistService>();
+
     builder.Services.AddExceptionHandler<Catalog.API.Middleware.GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
 
