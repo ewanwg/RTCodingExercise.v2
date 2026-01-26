@@ -79,6 +79,42 @@ namespace Catalog.API.Migrations
 
                     b.ToTable("Plates");
                 });
+
+            modelBuilder.Entity("Catalog.Domain.PlatesWatchlist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid>("PlateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("PriceAlert")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlateId");
+
+                    b.ToTable("PlatesWatchlist");
+                });
+
+            modelBuilder.Entity("Catalog.Domain.PlatesWatchlist", b =>
+                {
+                    b.HasOne("Catalog.Domain.Plate", "Plate")
+                        .WithMany()
+                        .HasForeignKey("PlateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plate");
+                });
 #pragma warning restore 612, 618
         }
     }

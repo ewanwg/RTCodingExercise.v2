@@ -1,4 +1,4 @@
-﻿namespace Catalog.API.Data
+namespace Catalog.API.Data
 {
     public class ApplicationDbContext : DbContext
     {
@@ -8,6 +8,7 @@
         }
 
         public DbSet<Plate> Plates { get; set; }
+        public DbSet<PlatesWatchlist> PlatesWatchlist { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +52,26 @@
                 
                 // Composite index for common filter combinations
                 entity.HasIndex(e => new { e.Status, e.SalePrice });
+            });
+
+            modelBuilder.Entity<PlatesWatchlist>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                // Configure decimal precision for prices. If NULL, then alert should be fired for any price change
+                entity.Property(e => e.PriceAlert)
+                    .HasPrecision(18, 2)
+                    .IsRequired(false);
+
+                entity.Property(e => e.CreatedDate)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.HasIndex(e => e.PlateId);
+
+                entity.HasOne(e => e.Plate)
+                    .WithMany()
+                    .HasForeignKey(e => e.PlateId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
