@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Plate, PagedResult, RevenueStatistics, PlateStatus } from '../models/plate';
+import { PlatesWatchlist } from '../models/plate-watchlist';
 
 @Injectable({
   providedIn: 'root',
@@ -75,5 +76,18 @@ export class Catalog {
 
   getRevenueStatistics(): Observable<RevenueStatistics> {
     return this.http.get<RevenueStatistics>(`${this.apiUrl}/api/plates/statistics/revenue`);
+  }
+
+  getWatchlist(): Observable<PlatesWatchlist[]> {
+    return this.http.get<PlatesWatchlist[]>(`${this.apiUrl}/api/plateswatchlist`);
+  }
+
+  addToWatchlist(plateId: string, priceAlert?: number): Observable<PlatesWatchlist> {
+    const body = { plateId, priceAlert };
+    return this.http.post<PlatesWatchlist>(`${this.apiUrl}/api/plateswatchlist`, body);
+  }
+
+  removeFromWatchlist(plateId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/api/plateswatchlist/${plateId}`);
   }
 }
