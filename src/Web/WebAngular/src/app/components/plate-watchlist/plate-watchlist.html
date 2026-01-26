@@ -1,1 +1,28 @@
 <p>plate-watchlist works!</p>
+
+@if (watchlist.length >0) {
+    <table>
+        <thead>
+        <tr>
+            <th>Registration</th>
+            <th>Sale Price</th>
+            <th>Price Alert</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+            @for (item of watchlist; track item.plateId) {
+                <tr>
+                    <td>{{ item.plate?.registration || '-' }}</td>
+                    <td>£{{ item.plate?.salePrice }}</td>
+                    <td>{{ (item.priceAlert | number:'1.2-2') ?? '-' }}</td>
+                    <td>{{ item.createdDate | date }}</td>
+                    <td>
+                    <button>Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+  </table>
+}
