@@ -9,13 +9,16 @@
         <li class="nav-item">
           <a class="nav-link active" href="/">Home</a>
         </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="/watchlist">Watchlist</a>
+        </li>
       </ul>
     </div>
   </div>
 </nav>
 
 <div class="container-fluid">
-  <app-plate-list></app-plate-list>
+  <router-outlet></router-outlet>
 </div>
 
 <footer class="bg-light text-center text-muted py-3 mt-5">
