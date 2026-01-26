@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  catalogApiUrl: ''
+  catalogApiUrl: 'http://localhost:5101',
 };
