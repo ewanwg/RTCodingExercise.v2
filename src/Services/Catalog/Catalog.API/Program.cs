@@ -45,6 +45,13 @@ try
     builder.Services.AddExceptionHandler<Catalog.API.Middleware.GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
 
+    // New: Notifications
+    builder.Services.AddScoped<INotificationsRepository, NotificationsRepository>();
+    builder.Services.AddScoped<INotificationService, NotificationService>();
+
+    // SignalR
+    builder.Services.AddSignalR();
+
     builder.Services.AddSwaggerGen(options =>
     {
         options.SwaggerDoc("v1", new OpenApiInfo
@@ -89,6 +96,11 @@ try
 
     builder.Services.AddMassTransit(x =>
     {
+        // Register consumers
+        x.AddConsumer<Catalog.API.Consumers.PlateSoldConsumer>();
+        x.AddConsumer<Catalog.API.Consumers.PlateReservedConsumer>();
+        x.AddConsumer<Catalog.API.Consumers.PlateUnreservedConsumer>();
+
         x.UsingRabbitMq((context, cfg) =>
         {
             var eventBusConnection = builder.Configuration["EventBusConnection"] ?? "localhost";
@@ -154,6 +166,9 @@ try
     {
         Predicate = _ => false
     });
+
+    // Map the SignalR hub for real-time notifications
+    app.MapHub<Catalog.API.Hubs.PlatesHub>("/hubs/plates");
 
     Log.Information("Applying migrations ({ApplicationContext})...", AppName);
     app.MigrateDbContext<ApplicationDbContext>((context, services) =>

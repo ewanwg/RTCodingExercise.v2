@@ -9,6 +9,7 @@ namespace Catalog.API.Data
 
         public DbSet<Plate> Plates { get; set; }
         public DbSet<PlatesWatchlist> PlatesWatchlist { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -72,6 +73,32 @@ namespace Catalog.API.Data
                     .WithMany()
                     .HasForeignKey(e => e.PlateId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Message)
+                    .IsRequired()
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.IsRead)
+                    .HasDefaultValue(false);
+
+                entity.Property(e => e.CreatedDate)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.HasIndex(e => e.PlateId);
+
+                entity.HasOne(e => e.Plate)
+                    .WithMany()
+                    .HasForeignKey(e => e.PlateId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

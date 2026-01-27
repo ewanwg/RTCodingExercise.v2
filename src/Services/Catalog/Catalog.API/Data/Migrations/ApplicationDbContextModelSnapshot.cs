@@ -22,6 +22,42 @@ namespace Catalog.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Catalog.Domain.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid?>("PlateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlateId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("Catalog.Domain.Plate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -103,6 +139,16 @@ namespace Catalog.API.Migrations
                     b.HasIndex("PlateId");
 
                     b.ToTable("PlatesWatchlist");
+                });
+
+            modelBuilder.Entity("Catalog.Domain.Notification", b =>
+                {
+                    b.HasOne("Catalog.Domain.Plate", "Plate")
+                        .WithMany()
+                        .HasForeignKey("PlateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Plate");
                 });
 
             modelBuilder.Entity("Catalog.Domain.PlatesWatchlist", b =>
