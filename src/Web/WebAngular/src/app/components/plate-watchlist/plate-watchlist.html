@@ -12,6 +12,7 @@
             <tr>
                 <th scope="col">Registration</th>
                 <th scope="col">Sale Price</th>
+                <th scope="col">Status</th>
                 <th scope="col">Price Alert</th>
                 <th scope="col">Created</th>
                 <th scope="col">Actions</th>
@@ -19,13 +20,15 @@
         </thead>
         <tbody>
             @for (item of watchlist; track item.plateId) {
-                <tr scope="row">
-                    <td>{{ item.plate?.registration || '-' }}</td>
+                <tr scope="row" [class.table-secondary]="item.plate?.status === PlateStatus.Sold" 
+                [class.text-muted]="item.plate?.status === PlateStatus.Sold">
+                    <td>{{ item.plate?.registration}}</td>
+                    <td>{{ getStatusText(item.plate?.status) }}</td>
                     <td>£{{ item.plate?.salePrice }}</td>
                     <td>{{ (item.priceAlert | number:'1.2-2') ?? '-' }}</td>
                     <td>{{ item.createdDate | date }}</td>
                     <td>
-                    <button>Remove</button>
+                    <button type="button" class="btn btn-primary" (click)="removeFromWatchlist(item.plateId)">Remove</button>
                     </td>
                 </tr>
             }

@@ -7,6 +7,7 @@ import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { formatRegistration } from '../../utils/plate-helpers';
+import { PlatesWatchlist } from '../../models/plate-watchlist';
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -50,12 +51,19 @@ export class PlateListComponent implements OnInit, AfterViewInit {
   // Enum for template
   PlateStatus = PlateStatus;
 
+  // Plates watchlist
+  watchlistPlateIds = new Set<string>();
+  showWatchlistModal = false;
+  watchlistPlateId: string | null = null;
+  watchlistPriceAlert?: number;
+
   constructor(private catalogService: Catalog, private cdr: ChangeDetectorRef) { }
 
   // Make the utility function accessible to the template
   formatRegistration = formatRegistration;
 
   ngOnInit(): void {
+    this.loadWatchlist();
     this.loadPlates();
     this.loadStatistics();
   }
@@ -192,6 +200,12 @@ export class PlateListComponent implements OnInit, AfterViewInit {
     });
   }
 
+  loadWatchlist(): void {
+    this.catalogService.getWatchlist().subscribe(items => {
+    this.watchlistPlateIds = new Set(items.map(w => w.plateId));
+  });
+  }
+
   onSearch(): void {
     this.currentPage = 1;
     this.loadPlates();
@@ -303,5 +317,41 @@ export class PlateListComponent implements OnInit, AfterViewInit {
       case PlateStatus.Sold: return 'Sold';
       default: return 'Unknown';
     }
+  }
+
+  removeFromWatchlist(plateId: string) {
+    this.catalogService.removeFromWatchlist(plateId).subscribe(() => {
+      this.watchlistPlateIds.delete(plateId);
+      this.success = 'Removed from watchlist';
+    });
+  }
+
+  openWatchlistModal(plateId: string) {
+  this.watchlistPlateId = plateId;
+  this.watchlistPriceAlert = undefined;
+  this.showWatchlistModal = true;
+}
+
+  closeWatchlistModal() {
+    this.showWatchlistModal = false;
+    this.watchlistPlateId = null;
+  }
+
+  confirmAddToWatchlist() {
+    if (!this.watchlistPlateId) return;
+
+    this.catalogService.addToWatchlist(
+      this.watchlistPlateId,
+      this.watchlistPriceAlert
+    ).subscribe({
+      next: () => {
+        this.watchlistPlateIds.add(this.watchlistPlateId!);
+        this.success = 'Plate added to watchlist';
+        this.closeWatchlistModal();
+      },
+      error: () => {
+        this.error = 'Failed to add plate to watchlist';
+      }
+    });
   }
 }
