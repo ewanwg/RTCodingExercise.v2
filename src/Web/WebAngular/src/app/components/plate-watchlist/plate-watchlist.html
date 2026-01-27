@@ -1,19 +1,25 @@
-<p>plate-watchlist works!</p>
+@if (loading) {
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
 
 @if (watchlist.length >0) {
-    <table>
+    <table class="table">
         <thead>
-        <tr>
-            <th>Registration</th>
-            <th>Sale Price</th>
-            <th>Price Alert</th>
-            <th>Created</th>
-            <th>Actions</th>
-        </tr>
+            <tr>
+                <th scope="col">Registration</th>
+                <th scope="col">Sale Price</th>
+                <th scope="col">Price Alert</th>
+                <th scope="col">Created</th>
+                <th scope="col">Actions</th>
+            </tr>
         </thead>
         <tbody>
             @for (item of watchlist; track item.plateId) {
-                <tr>
+                <tr scope="row">
                     <td>{{ item.plate?.registration || '-' }}</td>
                     <td>£{{ item.plate?.salePrice }}</td>
                     <td>{{ (item.priceAlert | number:'1.2-2') ?? '-' }}</td>
@@ -25,4 +31,8 @@
             }
         </tbody>
   </table>
+}
+
+@if (watchlist.length === 0 && !loading) {
+    <p>Your watchlist is empty.</p>
 }

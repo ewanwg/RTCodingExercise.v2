@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { PlatesWatchlist } from '../../models/plate-watchlist';
 import { Catalog } from '../../services/catalog';
 import { DecimalPipe, DatePipe } from '@angular/common';
@@ -14,7 +14,7 @@ export class PlateWatchlist implements OnInit {
   error: string | null = null;
   loading = false;
 
-  constructor(private catalogService: Catalog, private cdr: ChangeDetectorRef) { }
+  constructor(private catalogService: Catalog) { }
   
   ngOnInit(): void {
     this.loadWatchlist();
