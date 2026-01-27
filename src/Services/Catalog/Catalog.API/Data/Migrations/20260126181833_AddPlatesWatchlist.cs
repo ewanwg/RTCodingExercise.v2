@@ -35,12 +35,6 @@ namespace Catalog.API.Data.Migrations
                 name: "IX_PlatesWatchlist_PlateId",
                 table: "PlatesWatchlist",
                 column: "PlateId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PlatesWatchlist_PlateId_CustomerId",
-                table: "PlatesWatchlist",
-                columns: new[] { "PlateId", "CustomerId" },
-                unique: true);
         }
 
         /// <inheritdoc />
