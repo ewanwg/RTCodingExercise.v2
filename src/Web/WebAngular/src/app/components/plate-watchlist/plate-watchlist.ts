@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { PlatesWatchlist } from '../../models/plate-watchlist';
 import { Catalog } from '../../services/catalog';
-import { DecimalPipe, DatePipe } from '@angular/common';
+import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { PlateStatus } from '../../models/plate';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-plate-watchlist',
-  imports: [DecimalPipe, DatePipe],
+  imports: [CommonModule, DecimalPipe, DatePipe],
   templateUrl: './plate-watchlist.html',
   styleUrl: './plate-watchlist.css',
 })
@@ -17,36 +18,43 @@ export class PlateWatchlist implements OnInit {
 
   PlateStatus = PlateStatus;
 
-  constructor(private catalogService: Catalog) { }
-  
+  constructor(private catalogService: Catalog) {}
+
   ngOnInit(): void {
     this.loadWatchlist();
   }
 
   loadWatchlist(): void {
     this.loading = true;
-    this.catalogService.getWatchlist().subscribe({
-      next: (data) => {
-        this.watchlist = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load watchlist.';
-        console.error(err);
-        this.loading = false;
-      }
-    });
+
+    this.catalogService
+      .getWatchlist()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (items) => {
+          this.watchlist = items;
+        },
+        error: (err) => {
+          this.error = 'Failed to load watchlist.';
+          console.error('Error loading watchlist:', err);
+          setTimeout(() => (this.error = null), 5000);
+        },
+      });
   }
 
   removeFromWatchlist(plateId: string): void {
+    const previous = [...this.watchlist];
+    this.watchlist = this.watchlist.filter((w) => w.plateId !== plateId);
+
     this.catalogService.removeFromWatchlist(plateId).subscribe({
-      next: () => {
-        this.watchlist = this.watchlist.filter(w => w.plateId !== plateId);
-      },
       error: (err) => {
+        // Rollback on failure
+        this.watchlist = previous;
+
         this.error = 'Failed to remove plate from watchlist.';
         console.error(err);
-      }
+        setTimeout(() => (this.error = null), 5000);
+      },
     });
   }
 

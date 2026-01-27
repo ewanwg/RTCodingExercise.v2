@@ -1,4 +1,4 @@
-@if (loading) {
+@if (loading === true) {
     <div class="d-flex justify-content-center">
         <div class="spinner-border" role="status">
             <span class="visually-hidden">Loading...</span>
@@ -20,7 +20,7 @@
         </thead>
         <tbody>
             @for (item of watchlist; track item.plateId) {
-                <tr scope="row" [class.table-secondary]="item.plate?.status === PlateStatus.Sold" 
+                <tr scope="row" [class.table-secondary]="item.plate?.status === PlateStatus.Sold"
                 [class.text-muted]="item.plate?.status === PlateStatus.Sold">
                     <td>{{ item.plate?.registration}}</td>
                     <td>{{ getStatusText(item.plate?.status) }}</td>
@@ -34,8 +34,6 @@
             }
         </tbody>
   </table>
-}
-
-@if (watchlist.length === 0 && !loading) {
+} @else if (watchlist.length === 0 && !loading) {
     <p>Your watchlist is empty.</p>
 }

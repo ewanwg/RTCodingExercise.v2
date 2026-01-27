@@ -16,7 +16,7 @@ Chart.register(...registerables);
   selector: 'app-plate-list',
   imports: [CommonModule, FormsModule],
   templateUrl: './plate-list.html',
-  styleUrl: './plate-list.css'
+  styleUrl: './plate-list.css',
 })
 export class PlateListComponent implements OnInit, AfterViewInit {
   plates: Plate[] = [];
@@ -24,7 +24,7 @@ export class PlateListComponent implements OnInit, AfterViewInit {
   loading = true;
   error: string | null = null;
   success: string | null = null;
-  
+
   private profitChart: Chart | null = null;
 
   // Pagination
@@ -57,7 +57,10 @@ export class PlateListComponent implements OnInit, AfterViewInit {
   watchlistPlateId: string | null = null;
   watchlistPriceAlert?: number;
 
-  constructor(private catalogService: Catalog, private cdr: ChangeDetectorRef) { }
+  constructor(
+    private catalogService: Catalog,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   // Make the utility function accessible to the template
   formatRegistration = formatRegistration;
@@ -89,19 +92,18 @@ export class PlateListComponent implements OnInit, AfterViewInit {
       type: 'doughnut',
       data: {
         labels: ['Profit', 'Cost'],
-        datasets: [{
-          label: 'Profit Breakdown',
-          data: [this.statistics.totalProfit, cost],
-          backgroundColor: [
-            'rgba(40, 167, 69, 0.8)',   // Green for profit
-            'rgba(220, 53, 69, 0.8)'    // Red for cost
-          ],
-          borderColor: [
-            'rgba(40, 167, 69, 1)',
-            'rgba(220, 53, 69, 1)'
-          ],
-          borderWidth: 2
-        }]
+        datasets: [
+          {
+            label: 'Profit Breakdown',
+            data: [this.statistics.totalProfit, cost],
+            backgroundColor: [
+              'rgba(40, 167, 69, 0.8)', // Green for profit
+              'rgba(220, 53, 69, 0.8)', // Red for cost
+            ],
+            borderColor: ['rgba(40, 167, 69, 1)', 'rgba(220, 53, 69, 1)'],
+            borderWidth: 2,
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -115,8 +117,8 @@ export class PlateListComponent implements OnInit, AfterViewInit {
             text: `Revenue vs Profit - Average Margin: ${(this.statistics.averageProfitMargin * 100).toFixed(2)}%`,
             font: {
               size: 16,
-              weight: 'bold'
-            }
+              weight: 'bold',
+            },
           },
           tooltip: {
             callbacks: {
@@ -126,11 +128,11 @@ export class PlateListComponent implements OnInit, AfterViewInit {
                 const total = this.statistics!.totalRevenue;
                 const percentage = ((value / total) * 100).toFixed(2);
                 return `${label}: £${value.toFixed(2)} (${percentage}%)`;
-              }
-            }
-          }
-        }
-      }
+              },
+            },
+          },
+        },
+      },
     };
 
     this.profitChart = new Chart(canvas, config);
@@ -140,70 +142,89 @@ export class PlateListComponent implements OnInit, AfterViewInit {
     this.loading = true;
     this.error = null;
 
-    this.catalogService.getPlates(
-      this.searchText || undefined,
-      this.lettersFilter || undefined,
-      this.numbersFilter,
-      this.statusFilter,
-      this.sortBy || undefined,
-      this.currentPage,
-      this.pageSize
-    ).pipe(
-      catchError(err => {
-        console.error('Error loading plates:', err);
-        this.error = 'Failed to load plates: ' + (err.message || 'Unknown error');
-        this.loading = false;
-        return of({ items: [], page: 1, pageSize: 20, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false } as PagedResult<Plate>);
-      }),
-      finalize(() => {
-        this.loading = false;
-        this.cdr.detectChanges();
-      })
-    ).subscribe({
-      next: (data: PagedResult<Plate>) => {
-        this.plates = data.items;
-        this.currentPage = data.page;
-        this.totalPages = data.totalPages;
-        this.totalCount = data.totalCount;
-        this.hasPreviousPage = data.hasPreviousPage;
-        this.hasNextPage = data.hasNextPage;
-      },
-      error: (err) => {
-        this.error = 'Failed to load plates. Please try again later.';
-        console.error('Error loading plates:', err);
-      }
-    });
+    this.catalogService
+      .getPlates(
+        this.searchText || undefined,
+        this.lettersFilter || undefined,
+        this.numbersFilter,
+        this.statusFilter,
+        this.sortBy || undefined,
+        this.currentPage,
+        this.pageSize,
+      )
+      .pipe(
+        catchError((err) => {
+          console.error('Error loading plates:', err);
+          this.error = 'Failed to load plates: ' + (err.message || 'Unknown error');
+          this.loading = false;
+          return of({
+            items: [],
+            page: 1,
+            pageSize: 20,
+            totalPages: 0,
+            totalCount: 0,
+            hasPreviousPage: false,
+            hasNextPage: false,
+          } as PagedResult<Plate>);
+        }),
+        finalize(() => {
+          this.loading = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: (data: PagedResult<Plate>) => {
+          this.plates = data.items;
+          this.currentPage = data.page;
+          this.totalPages = data.totalPages;
+          this.totalCount = data.totalCount;
+          this.hasPreviousPage = data.hasPreviousPage;
+          this.hasNextPage = data.hasNextPage;
+        },
+        error: (err) => {
+          this.error = 'Failed to load plates. Please try again later.';
+          console.error('Error loading plates:', err);
+        },
+      });
   }
 
   loadStatistics(): void {
-    this.catalogService.getRevenueStatistics().pipe(
-      catchError(err => {
-        console.error('Error loading statistics:', err);
-        return of(null);
-      })
-    ).subscribe({
-      next: (data) => {
-        this.statistics = data;
-        
-        // Destroy existing chart if it exists
-        if (this.profitChart) {
-          this.profitChart.destroy();
-          this.profitChart = null;
-        }
-        
-        // Reinitialize chart with new data
-        setTimeout(() => this.initializeChart(), 100);
-      },
-      error: (err) => {
-        console.error('Error loading statistics:', err);
-      }
-    });
+    this.catalogService
+      .getRevenueStatistics()
+      .pipe(
+        catchError((err) => {
+          console.error('Error loading statistics:', err);
+          return of(null);
+        }),
+      )
+      .subscribe({
+        next: (data) => {
+          this.statistics = data;
+
+          // Destroy existing chart if it exists
+          if (this.profitChart) {
+            this.profitChart.destroy();
+            this.profitChart = null;
+          }
+
+          // Reinitialize chart with new data
+          setTimeout(() => this.initializeChart(), 100);
+        },
+        error: (err) => {
+          console.error('Error loading statistics:', err);
+        },
+      });
   }
 
   loadWatchlist(): void {
-    this.catalogService.getWatchlist().subscribe(items => {
-    this.watchlistPlateIds = new Set(items.map(w => w.plateId));
-  });
+    this.catalogService.getWatchlist().subscribe({
+      next: (items) => {
+        this.watchlistPlateIds = new Set(items.map((w) => w.plateId));
+      },
+      error: (err) => {
+        console.error('Error loading watchlist:', err);
+      },
+    });
   }
 
   onSearch(): void {
@@ -226,12 +247,12 @@ export class PlateListComponent implements OnInit, AfterViewInit {
         this.success = 'Plate reserved successfully!';
         this.loadPlates();
         this.loadStatistics();
-        setTimeout(() => this.success = null, 3000);
+        setTimeout(() => (this.success = null), 3000);
       },
       error: (err) => {
         this.error = 'Failed to reserve plate: ' + (err.error?.error || err.message);
-        setTimeout(() => this.error = null, 5000);
-      }
+        setTimeout(() => (this.error = null), 5000);
+      },
     });
   }
 
@@ -240,12 +261,12 @@ export class PlateListComponent implements OnInit, AfterViewInit {
       next: () => {
         this.success = 'Plate unreserved successfully!';
         this.loadPlates();
-        setTimeout(() => this.success = null, 3000);
+        setTimeout(() => (this.success = null), 3000);
       },
       error: (err) => {
         this.error = 'Failed to unreserve plate: ' + (err.error?.error || err.message);
-        setTimeout(() => this.error = null, 5000);
-      }
+        setTimeout(() => (this.error = null), 5000);
+      },
     });
   }
 
@@ -266,92 +287,120 @@ export class PlateListComponent implements OnInit, AfterViewInit {
   onPromoCodeChange(): void {
     if (!this.selectedPlate) return;
 
-    this.catalogService.calculatePrice(
-      this.selectedPlate.id,
-      this.selectedPromoCode || undefined
-    ).subscribe({
-      next: (price) => {
-        this.calculatedPrice = price;
-      },
-      error: (err) => {
-        console.error('Error calculating price:', err);
-      }
-    });
+    this.catalogService
+      .calculatePrice(this.selectedPlate.id, this.selectedPromoCode || undefined)
+      .subscribe({
+        next: (price) => {
+          this.calculatedPrice = price;
+        },
+        error: (err) => {
+          console.error('Error calculating price:', err);
+        },
+      });
   }
 
   confirmSale(): void {
     if (!this.selectedPlate) return;
 
-    this.catalogService.sellPlate(
-      this.selectedPlate.id,
-      this.selectedPromoCode || undefined
-    ).subscribe({
-      next: () => {
-        this.success = 'Plate sold successfully!';
-        this.closeSellModal();
-        this.loadPlates();
-        this.loadStatistics();
-        setTimeout(() => this.success = null, 3000);
-      },
-      error: (err) => {
-        this.error = 'Failed to sell plate: ' + (err.error?.error || err.message);
-        this.closeSellModal();
-        setTimeout(() => this.error = null, 5000);
-      }
-    });
+    this.catalogService
+      .sellPlate(this.selectedPlate.id, this.selectedPromoCode || undefined)
+      .subscribe({
+        next: () => {
+          this.success = 'Plate sold successfully!';
+          this.closeSellModal();
+          this.loadPlates();
+          this.loadStatistics();
+          setTimeout(() => (this.success = null), 3000);
+        },
+        error: (err) => {
+          this.error = 'Failed to sell plate: ' + (err.error?.error || err.message);
+          this.closeSellModal();
+          setTimeout(() => (this.error = null), 5000);
+        },
+      });
   }
 
   getStatusBadgeClass(status: PlateStatus): string {
     switch (status) {
-      case PlateStatus.ForSale: return 'badge-success';
-      case PlateStatus.Reserved: return 'badge-warning';
-      case PlateStatus.Sold: return 'badge-secondary';
-      default: return 'badge-secondary';
+      case PlateStatus.ForSale:
+        return 'badge-success';
+      case PlateStatus.Reserved:
+        return 'badge-warning';
+      case PlateStatus.Sold:
+        return 'badge-secondary';
+      default:
+        return 'badge-secondary';
     }
   }
 
   getStatusText(status: PlateStatus): string {
     switch (status) {
-      case PlateStatus.ForSale: return 'For Sale';
-      case PlateStatus.Reserved: return 'Reserved';
-      case PlateStatus.Sold: return 'Sold';
-      default: return 'Unknown';
+      case PlateStatus.ForSale:
+        return 'For Sale';
+      case PlateStatus.Reserved:
+        return 'Reserved';
+      case PlateStatus.Sold:
+        return 'Sold';
+      default:
+        return 'Unknown';
     }
   }
 
   removeFromWatchlist(plateId: string) {
-    this.catalogService.removeFromWatchlist(plateId).subscribe(() => {
-      this.watchlistPlateIds.delete(plateId);
-      this.success = 'Removed from watchlist';
-    });
+    this.catalogService
+      .removeFromWatchlist(plateId)
+      .pipe(finalize(() => this.cdr.detectChanges()))
+      .subscribe({
+        next: () => {
+          // Reassign the Set so Angular sees a new reference
+          this.watchlistPlateIds = new Set(
+            [...this.watchlistPlateIds].filter((id) => id !== plateId),
+          );
+
+          this.success = 'Removed from watchlist';
+          setTimeout(() => (this.success = null), 3000);
+        },
+        error: () => {
+          this.error = 'Failed to remove plate from watchlist';
+          setTimeout(() => (this.error = null), 5000);
+        },
+      });
   }
 
   openWatchlistModal(plateId: string) {
-  this.watchlistPlateId = plateId;
-  this.watchlistPriceAlert = undefined;
-  this.showWatchlistModal = true;
-}
+    this.watchlistPlateId = plateId;
+    this.watchlistPriceAlert = undefined;
+    this.showWatchlistModal = true;
+  }
 
   closeWatchlistModal() {
     this.showWatchlistModal = false;
     this.watchlistPlateId = null;
+    this.watchlistPriceAlert = undefined;
+    this.cdr.detectChanges();
   }
 
   confirmAddToWatchlist() {
     if (!this.watchlistPlateId) return;
 
-    this.catalogService.addToWatchlist(
-      this.watchlistPlateId,
-      this.watchlistPriceAlert
-    ).subscribe({
-      next: () => {
-        this.watchlistPlateIds.add(this.watchlistPlateId!);
-        this.success = 'Plate added to watchlist';
-        this.closeWatchlistModal();
-      },
-      error: () => {
-        this.error = 'Failed to add plate to watchlist';
-      }
-    });
+    this.catalogService
+      .addToWatchlist(this.watchlistPlateId, this.watchlistPriceAlert)
+      .pipe(
+        finalize(() => {
+          this.closeWatchlistModal();
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.watchlistPlateIds.add(this.watchlistPlateId!);
+          this.success = 'Plate added to watchlist';
+          setTimeout(() => (this.success = null), 3000);
+        },
+        error: () => {
+          this.error = 'Failed to add plate to watchlist';
+          setTimeout(() => (this.error = null), 5000);
+        },
+      });
   }
 }

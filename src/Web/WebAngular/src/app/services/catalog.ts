@@ -63,14 +63,14 @@ export class Catalog {
   sellPlate(id: string, promoCode?: string): Observable<Plate> {
     let params = new HttpParams();
     if (promoCode) params = params.set('promoCode', promoCode);
-    
+
     return this.http.post<Plate>(`${this.apiUrl}/api/plates/${id}/sell`, null, { params });
   }
 
   calculatePrice(id: string, promoCode?: string): Observable<number> {
     let params = new HttpParams();
     if (promoCode) params = params.set('promoCode', promoCode);
-    
+
     return this.http.get<number>(`${this.apiUrl}/api/plates/${id}/calculate-price`, { params });
   }
 
