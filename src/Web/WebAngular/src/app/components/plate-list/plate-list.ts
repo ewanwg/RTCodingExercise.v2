@@ -1,13 +1,14 @@
-import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Catalog } from '../../services/catalog';
 import { Plate, PagedResult, RevenueStatistics, PlateStatus } from '../../models/plate';
 import { catchError, finalize } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { of, Subscription, ReplaySubject } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { formatRegistration } from '../../utils/plate-helpers';
 import { PlatesWatchlist } from '../../models/plate-watchlist';
+import { NotificationsService } from '../../services/notifications.service';
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -18,7 +19,7 @@ Chart.register(...registerables);
   templateUrl: './plate-list.html',
   styleUrl: './plate-list.css',
 })
-export class PlateListComponent implements OnInit, AfterViewInit {
+export class PlateListComponent implements OnInit, AfterViewInit, OnDestroy {
   plates: Plate[] = [];
   statistics: RevenueStatistics | null = null;
   loading = true;
@@ -57,9 +58,12 @@ export class PlateListComponent implements OnInit, AfterViewInit {
   watchlistPlateId: string | null = null;
   watchlistPriceAlert?: number;
 
+  private notificationSub?: Subscription;
+
   constructor(
     private catalogService: Catalog,
     private cdr: ChangeDetectorRef,
+    private notifications: NotificationsService,
   ) {}
 
   // Make the utility function accessible to the template
@@ -69,11 +73,55 @@ export class PlateListComponent implements OnInit, AfterViewInit {
     this.loadWatchlist();
     this.loadPlates();
     this.loadStatistics();
+
+    // Subscribe to notifications stream
+    this.notificationSub = this.notifications.events$.subscribe((evt) => this.onPlateEvent(evt));
+
+    // Then start SignalR
+    this.notifications
+      .start()
+      .then(() => {
+        console.info('Notifications started from PlateListComponent');
+      })
+      .catch((err) => {
+        console.error('Failed to start notifications:', err);
+      });
   }
 
   ngAfterViewInit(): void {
     // Initialize the chart after view is ready
     this.initializeChart();
+  }
+
+  ngOnDestroy(): void {
+    if (this.notificationSub) {
+      this.notificationSub.unsubscribe();
+      this.notificationSub = undefined;
+    }
+    this.notifications.stop().catch((err) => {
+      console.warn('Error stopping notifications:', err);
+    });
+  }
+
+  private onPlateEvent(evt: { type: string; payload: any }) {
+    console.info('Handling plate event:', evt);
+    const payload = evt.payload || {};
+    const plateId = payload.plateId.toString();
+
+    // If the changed plate is in the user's watchlist, show a stronger message
+    if (plateId && this.watchlistPlateIds.has(plateId)) {
+      // you can enhance this to check price alerts, etc.
+      this.success = `Watchlist plate updated: ${payload.message}`;
+    }
+
+    // Ensure UI updates
+    this.cdr.detectChanges();
+
+    // Clear transient success after a short delay
+    setTimeout(() => {
+      this.success = null;
+      this.cdr.detectChanges();
+    }, 4000);
   }
 
   private initializeChart(): void {
@@ -218,8 +266,19 @@ export class PlateListComponent implements OnInit, AfterViewInit {
 
   loadWatchlist(): void {
     this.catalogService.getWatchlist().subscribe({
-      next: (items) => {
+      next: async (items) => {
         this.watchlistPlateIds = new Set(items.map((w) => w.plateId));
+
+        // Ensure we join SignalR groups for each watchlist plate
+        for (const id of this.watchlistPlateIds) {
+          try {
+            // ignore errors gracefully if not connected yet
+            await this.notifications.joinPlateGroup(id);
+          } catch (err) {
+            // connection may not be started yet — it's ok, join will be retried no-op later
+            console.debug('Failed to join group for', id, err);
+          }
+        }
       },
       error: (err) => {
         console.error('Error loading watchlist:', err);
@@ -357,6 +416,11 @@ export class PlateListComponent implements OnInit, AfterViewInit {
             [...this.watchlistPlateIds].filter((id) => id !== plateId),
           );
 
+          // leave SignalR group for this plate
+          this.notifications.leavePlateGroup(plateId).catch((err) => {
+            console.debug('Failed to leave group for', plateId, err);
+          });
+
           this.success = 'Removed from watchlist';
           setTimeout(() => (this.success = null), 3000);
         },
@@ -394,6 +458,12 @@ export class PlateListComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: () => {
           this.watchlistPlateIds.add(this.watchlistPlateId!);
+
+          // join SignalR group for this plate
+          this.notifications.joinPlateGroup(this.watchlistPlateId!).catch((err) => {
+            console.debug('Failed to join group for', this.watchlistPlateId, err);
+          });
+
           this.success = 'Plate added to watchlist';
           setTimeout(() => (this.success = null), 3000);
         },
