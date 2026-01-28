@@ -15,6 +15,7 @@
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
     <None Include="src\Web\WebAngular\src\app\components\watchlist\watchlist.component.ts" />
+    <None Include="src\Web\WebAngular\src\app\services\notifications.service.ts" />
     <None Include="src\Web\WebAngular\src\app\services\plate-signalr.service.ts" />
     <None Include="src\Web\WebAngular\src\app\services\watchlist.service.ts" />
   </ItemGroup>
